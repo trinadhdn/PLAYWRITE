@@ -1,0 +1,111 @@
+steps:
+  
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download environment artifact'
+    inputs:
+      artifact: 'environment'
+
+  - powershell: |
+      $filePath = Join-Path -Path $env:PIPELINE_WORKSPACE -ChildPath "environment.json"
+      $json = Get-Content $filePath | Out-String | ConvertFrom-Json
+
+      foreach($prop in $json.psobject.properties) {
+        echo $prop.Name $prop.Value
+        Write-Host("##vso[task.setvariable variable=$($prop.Name);isOutput=true]$($prop.Value)")
+      }
+    name: getBuildVariables
+    displayName: 'Set build variables'
+
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download integration tests pipeline artifact'
+    inputs:
+      artifact: connmodule-integrationtests-$(getBuildVariables.artifactVersion)
+
+  - task: ExtractFiles@1
+    displayName: 'Extract pipeline artifacts'
+    inputs:
+      archiveFilePatterns: |
+        $(Pipeline.Workspace)/connmodule-integrationtests-$(getBuildVariables.artifactVersion).zip
+      cleanDestinationFolder: false
+
+  - task: AzurePowerShell@5
+    displayName: 'Run Installer Tests'
+    name: RunTests
+    inputs:
+      azureSubscription: ${{ parameters.service_conn }}
+      workingDir: '$(System.DefaultWorkingDirectory)/integrationtests/Tests/installer'
+      ScriptType: InlineScript
+      Inline: |
+        $apimContext = New-AzApiManagementContext -ResourceGroupName $(rgName) -ServiceName $(apimName)
+        $deviceEnrollSubscriptionId = "device-enrollment"
+        $ocpInstallerSubscriptionKey = (Get-AzApiManagementSubscriptionKey -Context $apimContext -SubscriptionId $deviceEnrollSubscriptionId).PrimaryKey
+        $frontdoorHostName = (Get-AzFrontDoorCdnEndpoint -EndpointName $(frontdoorName) -ProfileName $(frontdoorName) -ResourceGroupName $(rgName)).HostName
+        $apimbaseUrl = "https://$frontdoorHostName" 
+        $saKey=(Get-AzStorageAccountKey -ResourceGroupName $(rgName) -Name $(installerStorageAccountName)).Value[0]
+        Invoke-AzVMRunCommand -ResourceGroupName $(testVmRg) -Name $(testInstallerAutomationVm) -CommandId 'RunPowerShellScript' -ScriptPath '$(System.DefaultWorkingDirectory)/integrationtests/Tests/installer/installer.ps1' -Parameter @{installerStorageAccountNameValue = "$(installerStorageAccountName)"; installerversionvalue = "$(installerVersion)"; installerenvironmentvalue = "$(installerEnvironment)"; installerstorageconnstringvalue = "$saKey"; ocpInstallerSubscriptionKeyvalue = "$ocpInstallerSubscriptionKey"; apimbaseUrlvalue = "$apimbaseUrl"} -Verbose
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@4
+    displayName: 'Upload logs to Blob Storage'
+    name: UploadLogs
+    inputs:
+      azureSubscription: ${{ parameters.service_conn }}
+      workingDir: '$(System.DefaultWorkingDirectory)/integrationtests/Tests/installer'
+      ScriptType: InlineScript
+      Inline: |
+        Invoke-AzVMRunCommand -ResourceGroupName $(testVmRg) -Name $(testInstallerAutomationVm) -CommandId 'RunPowerShellScript' -ScriptPath '$(System.DefaultWorkingDirectory)/integrationtests/Tests/installer/uploadlogs.ps1' -Parameter @{test_sp_secretvalue = "$(spClientSecret)"; test_sp_appidvalue = "$(spClientAppId)"; test_sp_tenantidvalue = "$(tenantId)"; test_subscriptionidvalue = "$(subscriptionId)"} -Verbose 
+      azurePowerShellVersion: LatestVersion
+
+  - task: AzurePowerShell@5
+    displayName: 'Download Log Files'
+    inputs:
+      azureSubscription: ${{ parameters.service_conn }}
+      ScriptType: 'InlineScript'
+      Inline: |
+        $storageAccountKey = (Get-AzStorageAccountKey -ResourceGroupName $(logsSaRg) -Name $(logsStorageAccount)).Value[0]
+        $context = New-AzStorageContext -StorageAccountName $(logsStorageAccount) -StorageAccountKey $storageAccountKey
+        Get-AzStorageBlobContent -Container "installerautomationlogs" -Context $context -Blob "TESTSInstallationreport.trx" -Destination "$(Agent.TempDirectory)\" -Force
+      azurePowerShellVersion: 'LatestVersion'
+
+  # - task: PowerShell@2
+    # condition: |
+    #   and (
+    #     succeeded(),
+    #     or (
+    #         eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+    #         eq(variables['is_createtestcases_in_ado'], 'true')
+    #     )
+    #   )
+    # displayName: 'Generate custom test json report - Installer GUI Automation'
+    # inputs:
+    #   targetType: 'filePath'
+    #   filePath: 'toolintegrations/traceability/scripts/customjsonreportgenerator_xunit.ps1'
+    #   arguments: -testReportFilePath "$(Agent.TempDirectory)\TESTSInstallationreport.trx" -outputFolderName "TESTSInstallationreport" -outputFileName "TESTSInstallationreport"
+    #   pwsh: true
+    #   workingDirectory: $(Agent.TempDirectory)
+
+  - task: ArchiveFiles@2
+    condition: |
+      or (
+          eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+          eq(variables['isCreateTestCasesInAdo'], 'true')
+      )
+    displayName: 'Create zip with generated test report trx'
+    inputs:
+      rootFolderOrFile: '$(Agent.TempDirectory)/TESTSInstallationreport.trx'
+      includeRootFolder: false
+      archiveType: zip
+      archiveFile: '$(Build.ArtifactStagingDirectory)/conmmodule-TestInstallationreport-$(regionSc)-$(getBuildVariables.artifactVersion).zip'
+      replaceExistingArchive: true
+
+  - task: PublishPipelineArtifact@1
+    condition: |
+      or (
+          eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+          eq(variables['isCreateTestCasesInAdo'], 'true')
+      )
+    displayName: 'Publish Pipeline artifact Graphical Installer Automation integration reports'
+    inputs:
+      path: '$(Build.ArtifactStagingDirectory)'
+      artifact: 'conmmodule-TestInstallationreport-$(regionSc)-$(getBuildVariables.artifactVersion)'
+

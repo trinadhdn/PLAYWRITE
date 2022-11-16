@@ -1,0 +1,44 @@
+[
+	{
+        "name": "CALLISTO eye 3.2.1 model I",
+        "identifier": "04049539102423",
+        "manufacturer": "Carl Zeiss Meditec AG",
+        "type": ""
+    },
+	{
+        "name": "CALLISTO eye 3.5.1 model I",
+        "identifier": "04049539069092",
+        "manufacturer": "Carl Zeiss Meditec AG",
+        "type": ""
+    },
+	{
+        "name": "CALLISTO eye model II",
+        "identifier": "04049539103512",
+        "manufacturer": "Carl Zeiss Meditec AG",
+        "type": ""
+    },
+	{
+        "name": "CALLISTO eye model III",
+        "identifier": "04049539069214",
+        "manufacturer": "Carl Zeiss Meditec AG",
+        "type": ""
+    },
+    {
+        "name": "IOLMaster 700",
+        "identifier": "04049471092080",
+        "manufacturer": "Carl Zeiss Meditec AG",
+        "type": ""
+    },
+	{
+        "name": "IOLMaster 500",
+        "identifier": "04049471092066",
+        "manufacturer": "Carl Zeiss Meditec AG",
+        "type": ""
+    },
+    {
+        "name": "Others",
+        "identifier": "",
+        "manufacturer": "Unknown",
+        "type": ""
+    }
+]

@@ -1,0 +1,3961 @@
+name: 'CM_INTEGRATIONTESTS_$(cmVersion)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)'
+variables:
+  environmentFileName: 'environment.json'
+  vmImage: 'ubuntu-latest'
+  vmImageWindows: 'windows-latest'
+  euLocation: 'West Europe'
+  euLocationShortcut: 'euw'
+  usLocation: 'East US 2'
+  usLocationShortcut: 'use2'
+  inLocation: 'Central India'
+  inLocationShortcut: 'inc'
+  ukLocation: 'UK South'
+  ukLocationShortcut: 'uks'
+  auLocation: 'Australia East'
+  auLocationShortcut: 'aue'
+  adminPortalEnglishLanguage: 'en-EN'
+  adminPortalDutchLanguage: 'de-DE'
+  adminPortalSpanishLanguage: 'es-ES'
+
+stages:
+  - stage: BUILD
+    jobs:
+      - job: InitBuild
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Build/init-build.yml
+
+      - job: PackageInfraAndIntegrationTestsConfig
+        dependsOn: InitBuild
+        pool:
+          vmImage: $(vmImage)
+        variables:
+          artifactVersion: $[ dependencies.InitBuild.outputs['getArtifactVersion.artifactVersion'] ]
+        steps:
+          - template: Build/package-tests-config.yml
+
+  - stage: DEV_TEST
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: dev
+      - name: regionSc
+        value: eu
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(euLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(dev_subscription_prefix)
+      - name: testVmRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-proxy-rg
+      - name: apimName
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-frontdoor-fd
+      - name: rgName
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmtestdevice
+      - name: testServiceUserVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)automatedtestserviceuservm
+      - name: testRegularUserVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmregularuserinttest
+      - name: testProxyVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmwindowsclient
+      - name: zeissTestUserId
+        value: $(dev_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(dev_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(dev_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(dev_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(dev_sp_tenantid)
+      - name: spClientAppId
+        value: $(dev_sp_clientid)
+      - name: spClientSecret
+        value: $(dev_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(dev_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(dev_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(dev_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(dev_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(dev_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(dev_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(dev_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(dev_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(dev_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(dev_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(dev_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(dev_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(dev_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(dev_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(dev_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(dev_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(dev_retry_count)
+      - name: usePrL1Credentials
+        value: $(dev_usePrL1Credentials)
+      - name: allowedInstallerVersions
+        value: $(dev_allowedInstallerVersions)
+      - name: isCustomHostEnabled
+        value: $(dev_is_customhost_enabled)
+      - name: isStreamingEnabled
+        value: $(dev_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(dev_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(dev_update_type)
+      - name: updateVersion
+        value: $(dev_update_version)
+      - group: connectivitymodule-integrationtest
+    condition: |
+      and (
+         succeeded('BUILD'),
+         ne(variables['Build.SourceBranch'],'refs/heads/main'),
+         ne(variables['Build.SourceBranch'],'refs/heads/release/current')
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: |
+          and (
+            succeeded('StartTestVM'),
+            eq(variables['dev_is_run_nonadminportaltests'], 'true')
+          )
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['dev_is_run_nonadminportaltests'], 'true')
+           )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['dev_is_run_nonadminportaltests'], 'true')
+           )
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['dev_is_run_nonadminportaltests'], 'true')
+           )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['dev_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['dev_is_run_nonadminportaltests'], 'true')
+           )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['dev_is_run_nonadminportaltests'], 'true')
+           )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+      
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['dev_is_run_nonadminportaltests'], 'true')
+           )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['dev_is_run_nonadminportaltests'], 'true')
+           )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: AdminPortal
+        dependsOn: StartTestVM
+        condition: succeeded()
+        timeoutInMinutes: 800
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)  
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['dev_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: InstallerTests
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['dev_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+
+  - stage: QA_TEST
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: qa
+      - name: regionSc
+        value: eu
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(euLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(qa_subscription_prefix)
+      - name: testVmRg
+        value: $(qa_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(qa_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(qa_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(qa_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(qa_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-frontdoor-fd
+      - name: rgName
+        value: $(qa_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(qa_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmtestdevice
+      - name: testServiceUserVm
+        value: $(qa_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmserviceuserinttest
+      - name: testRegularUserVm
+        value: $(qa_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmregularuserinttest
+      - name: testProxyVm
+        value: $(qa_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)proxyvm
+      - name: zeissTestUserId
+        value: $(qa_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(qa_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(qa_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(qa_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(qa_sp_tenantid)
+      - name: spClientAppId
+        value: $(qa_sp_clientid)
+      - name: spClientSecret
+        value: $(qa_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(qa_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(qa_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(qa_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(qa_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(qa_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(qa_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(qa_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(qa_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(qa_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(qa_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(qa_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(qa_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(qa_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(qa_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(qa_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(qa_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(qa_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(qa_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(qa_subscriptionId)
+      - name: logsSaRg
+        value: $(qa_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(qa_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(qa_retry_count)
+      - name: usePrL1Credentials
+        value: $(qa_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(qa_is_customhost_enabled)
+      - name: isStreamingEnabled
+        value: $(qa_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(qa_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(qa_update_type)
+      - name: updateVersion
+        value: $(qa_update_version)
+      - name: allowedInstallerVersions
+        value: $(qa_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(qa_proxy_url)
+      - group: connectivitymodule-integrationtest
+    condition: |
+      and (
+        succeeded(),
+        eq(variables['is_runtests_qa'],'true'),
+        eq(variables['Build.SourceBranch'],'refs/heads/develop')
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['qa_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 360
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)  
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['qa_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: InstallerTests
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(dev_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['qa_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+
+  - stage: STAGE_TEST
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: stg
+      - name: regionSc
+        value: eu
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(euLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(stg_subscription_prefix)
+      - name: testVmRg
+        value: $(stg_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(stg_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(stg_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(stg_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(stg_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-frontdoor-fd
+      - name: rgName
+        value: $(stg_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(stg_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmtestdevice
+      - name: testServiceUserVm
+        value: $(stg_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmserviceuserinttest
+      - name: testRegularUserVm
+        value: $(stg_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmregularuserinttest
+      - name: testProxyVm
+        value: $(stg_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)proxyvm
+      - name: zeissTestUserId
+        value: $(stg_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(stg_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(stg_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(stg_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(stg_sp_tenantid)
+      - name: spClientAppId
+        value: $(stg_sp_clientid)
+      - name: spClientSecret
+        value: $(stg_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(stg_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(stg_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(stg_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(stg_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(stg_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(stg_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(stg_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(stg_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(stg_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(stg_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(stg_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(stg_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(stg_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(stg_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(stg_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(stg_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(stg_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(stg_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(stg_subscriptionId)
+      - name: logsSaRg
+        value: $(stg_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(stg_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(stg_retry_count)
+      - name: usePrL1Credentials
+        value: $(stg_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(stg_is_customhost_enabled)
+      - name: customDomain
+        value: $(stg_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(stg_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(stg_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(stg_update_type)
+      - name: updateVersion
+        value: $(stg_update_version)
+      - name: allowedInstallerVersions
+        value: $(stg_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(stg_proxy_url)
+      - group: connectivitymodule-integrationtest
+    condition: |
+      and (
+        succeeded(),
+        eq(variables['is_runtests_stage'],'true'),
+        eq(variables['Build.SourceBranch'],'refs/heads/develop')
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['stg_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 800
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)  
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['stg_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: InstallerTests
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(stage_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['stg_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+
+  - stage: UAT_TEST_US
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: uat
+      - name: regionSc
+        value: us
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(usLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(uat_subscription_prefix)
+      - name: testVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(usLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(usLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(usLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(usLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(uat_us_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(uat_us_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(uat_us_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(uat_us_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(uat_sp_tenantid)
+      - name: spClientAppId
+        value: $(uat_sp_clientid)
+      - name: spClientSecret
+        value: $(uat_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(uat_us_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(uat_us_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(uat_us_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(uat_us_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(uat_us_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(uat_us_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(uat_us_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(uat_us_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(uat_us_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(uat_us_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(uat_us_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(uat_us_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(uat_us_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(uat_us_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)euwcmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(uat_us_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(uat_us_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(uat_us_retry_count)
+      - name: usePrL1Credentials
+        value: $(uat_us_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(uat_us_is_customhost_enabled)
+      - name: customDomain
+        value: $(uat_us_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(uat_us_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(uat_us_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(uat_us_update_type)
+      - name: updateVersion
+        value: $(uat_us_update_version)
+      - name: allowedInstallerVersions
+        value: $(uat_us_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(uat_us_proxy_url)
+      - name: testServiceUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_us_region'],'true'),
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )         
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_us_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 800
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)  
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_us_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['uat_us_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+          
+  - stage: UAT_TEST_EU     
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: uat
+      - name: regionSc
+        value: eu
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(euLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(uat_subscription_prefix)
+      - name: testVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(uat_eu_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(uat_eu_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(uat_eu_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(uat_eu_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(uat_sp_tenantid)
+      - name: spClientAppId
+        value: $(uat_sp_clientid)
+      - name: spClientSecret
+        value: $(uat_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(uat_eu_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(uat_eu_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(uat_eu_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(uat_eu_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(uat_eu_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(uat_eu_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(uat_eu_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(uat_eu_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(uat_eu_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(uat_eu_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(uat_eu_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(uat_eu_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(uat_eu_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(uat_eu_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(uat_eu_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(uat_eu_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(uat_eu_retry_count)
+      - name: usePrL1Credentials
+        value: $(uat_eu_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(uat_eu_is_customhost_enabled)
+      - name: customDomain
+        value: $(uat_eu_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(uat_eu_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(uat_eu_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(uat_eu_update_type)
+      - name: updateVersion
+        value: $(uat_eu_update_version)
+      - name: allowedInstallerVersions
+        value: $(uat_eu_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(uat_eu_proxy_url)
+      - name: testServiceUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_eu_region'],'true'), 
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_eu_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+      
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 600
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)  
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_eu_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['uat_eu_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+
+  - stage: UAT_TEST_IN
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: uat
+      - name: regionSc
+        value: inc
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(inLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(uat_subscription_prefix)
+      - name: testVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(uat_in_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(uat_in_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(uat_in_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(uat_in_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(uat_sp_tenantid)
+      - name: spClientAppId
+        value: $(uat_sp_clientid)
+      - name: spClientSecret
+        value: $(uat_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(uat_in_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(uat_in_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(uat_in_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(uat_in_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(uat_in_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(uat_in_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(uat_in_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(uat_in_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(uat_in_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(uat_in_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(uat_in_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(uat_in_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(uat_in_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(uat_in_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)euwcmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(uat_in_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutointion
+        value: $(uat_us_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(uat_in_retry_count)
+      - name: usePrL1Credentials
+        value: $(uat_in_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(uat_in_is_customhost_enabled)
+      - name: customDomain
+        value: $(uat_in_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(uat_in_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(uat_in_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(uat_in_update_type)
+      - name: updateVersion
+        value: $(uat_in_update_version)
+      - name: allowedInstallerVersions
+        value: $(uat_in_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(uat_in_proxy_url)
+      - name: testServiceUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_in_region'],'true'),
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_us_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 800
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)  
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_in_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['uat_in_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+
+  - stage: UAT_TEST_UK
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: uat
+      - name: regionSc
+        value: uk
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(ukLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(uat_subscription_prefix)
+      - name: testVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(uat_uk_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(uat_uk_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(uat_uk_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(uat_uk_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(uat_sp_tenantid)
+      - name: spClientAppId
+        value: $(uat_sp_clientid)
+      - name: spClientSecret
+        value: $(uat_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(uat_uk_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(uat_uk_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(uat_uk_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(uat_uk_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(uat_uk_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(uat_uk_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(uat_uk_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(uat_uk_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(uat_uk_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(uat_uk_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(uat_uk_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(uat_uk_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(uat_uk_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(uat_uk_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)euwcmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(uat_uk_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutointion
+        value: $(uat_uk_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(uat_uk_retry_count)
+      - name: usePrL1Credentials
+        value: $(uat_uk_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(uat_uk_is_customhost_enabled)
+      - name: customDomain
+        value: $(uat_uk_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(uat_uk_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(uat_uk_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(uat_uk_update_type)
+      - name: updateVersion
+        value: $(uat_uk_update_version)
+      - name: allowedInstallerVersions
+        value: $(uat_uk_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(uat_uk_proxy_url)
+      - name: testServiceUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_uk_region'],'true'),
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_uk_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 800
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)  
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_uk_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['uat_uk_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+
+  - stage: UAT_TEST_AU
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: uat
+      - name: regionSc
+        value: au
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(auLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(uat_subscription_prefix)
+      - name: testVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(uat_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(uat_au_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(uat_au_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(uat_au_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(uat_au_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(uat_sp_tenantid)
+      - name: spClientAppId
+        value: $(uat_sp_clientid)
+      - name: spClientSecret
+        value: $(uat_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(uat_au_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(uat_au_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(uat_au_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(uat_au_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(uat_au_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(uat_au_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(uat_au_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(uat_au_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(uat_au_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(uat_au_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(uat_au_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(uat_au_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(uat_au_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(uat_au_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)euwcmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(uat_au_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutointion
+        value: $(uat_au_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(uat_au_retry_count)
+      - name: usePrL1Credentials
+        value: $(uat_au_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(uat_au_is_customhost_enabled)
+      - name: customDomain
+        value: $(uat_au_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(uat_au_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(uat_au_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(uat_au_update_type)
+      - name: updateVersion
+        value: $(uat_au_update_version)
+      - name: allowedInstallerVersions
+        value: $(uat_au_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(uat_au_proxy_url)
+      - name: testServiceUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(uat_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_au_region'],'true'),
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_au_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 800
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)  
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['uat_au_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['uat_au_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+          
+  - stage: PREPROD_TEST_US
+    dependsOn:
+     - BUILD
+    variables:
+      - name: targetEnvironment
+        value: ppd
+      - name: regionSc
+        value: us
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(usLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(preprod_subscription_prefix)
+      - name: testVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(usLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(usLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(usLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(usLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(preprod_us_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(preprod_us_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(preprod_us_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(preprod_us_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(preprod_sp_tenantid)
+      - name: spClientAppId
+        value: $(preprod_sp_clientid)
+      - name: spClientSecret
+        value: $(preprod_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(preprod_us_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(preprod_us_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(preprod_us_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(preprod_us_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(preprod_us_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(preprod_us_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(preprod_us_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(preprod_us_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(preprod_us_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(preprod_us_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(preprod_us_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(preprod_us_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(preprod_us_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(preprod_us_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)euwcmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(preprod_us_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(preprod_us_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(preprod_us_retry_count)
+      - name: usePrL1Credentials
+        value: $(preprod_us_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(preprod_us_is_customhost_enabled)
+      - name: customDomain
+        value: $(preprod_us_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(preprod_us_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(preprod_us_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(preprod_us_update_type)
+      - name: updateVersion
+        value: $(preprod_us_update_version)
+      - name: allowedInstallerVersions
+        value: $(preprod_us_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(preprod_us_proxy_url)
+      - name: testServiceUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(usLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest-preprod
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_us_region'],'true'),
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_us_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 600
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)  
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_us_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['preprod_us_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+
+  - stage: PREPROD_TEST_EU      
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: ppd
+      - name: regionSc
+        value: eu
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(euLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(preprod_subscription_prefix)
+      - name: testVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(preprod_eu_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(preprod_eu_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(preprod_eu_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(preprod_eu_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(preprod_sp_tenantid)
+      - name: spClientAppId
+        value: $(preprod_sp_clientid)
+      - name: spClientSecret
+        value: $(preprod_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(preprod_eu_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(preprod_eu_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(preprod_eu_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(preprod_eu_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(preprod_eu_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(preprod_eu_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(preprod_eu_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(preprod_eu_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(preprod_eu_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(preprod_eu_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(preprod_eu_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(preprod_eu_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(preprod_eu_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(preprod_eu_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)cmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(preprod_eu_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(preprod_eu_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(euLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(euLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(preprod_eu_retry_count)
+      - name: usePrL1Credentials
+        value: $(preprod_eu_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(preprod_eu_is_customhost_enabled)
+      - name: customDomain
+        value: $(preprod_eu_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(preprod_eu_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(preprod_eu_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(preprod_eu_update_type)
+      - name: updateVersion
+        value: $(preprod_eu_update_version)
+      - name: allowedInstallerVersions
+        value: $(preprod_eu_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(preprod_eu_proxy_url)
+      - name: testServiceUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(euLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest-preprod
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_eu_region'],'true'), 
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_eu_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 600
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection) 
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_eu_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection) 
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['preprod_eu_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml
+
+  - stage: PREPROD_TEST_IN      
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: ppd
+      - name: regionSc
+        value: in
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(inLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(preprod_subscription_prefix)
+      - name: testVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(preprod_in_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(preprod_in_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(preprod_in_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(preprod_in_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(preprod_sp_tenantid)
+      - name: spClientAppId
+        value: $(preprod_sp_clientid)
+      - name: spClientSecret
+        value: $(preprod_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(preprod_in_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(preprod_in_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(preprod_in_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(preprod_in_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(preprod_in_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(preprod_in_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(preprod_in_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(preprod_in_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(preprod_in_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(preprod_in_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(preprod_in_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(preprod_in_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(preprod_in_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(preprod_in_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)euwcmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(preprod_in_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(preprod_in_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(inLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(inLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(preprod_in_retry_count)
+      - name: usePrL1Credentials
+        value: $(preprod_in_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(preprod_in_is_customhost_enabled)
+      - name: customDomain
+        value: $(preprod_in_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(preprod_in_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(preprod_in_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(preprod_in_update_type)
+      - name: updateVersion
+        value: $(preprod_in_update_version)
+      - name: allowedInstallerVersions
+        value: $(preprod_in_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(preprod_in_proxy_url)
+      - name: testServiceUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(inLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest-preprod
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_in_region'],'true'), 
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_in_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 600
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection) 
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_in_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection) 
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['preprod_in_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml  
+
+  - stage: PREPROD_TEST_UK      
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: ppd
+      - name: regionSc
+        value: uk
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(ukLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(preprod_subscription_prefix)
+      - name: testVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(preprod_uk_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(preprod_uk_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(preprod_uk_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(preprod_uk_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(preprod_sp_tenantid)
+      - name: spClientAppId
+        value: $(preprod_sp_clientid)
+      - name: spClientSecret
+        value: $(preprod_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(preprod_uk_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(preprod_uk_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(preprod_uk_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(preprod_uk_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(preprod_uk_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(preprod_uk_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(preprod_uk_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(preprod_uk_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(preprod_uk_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(preprod_uk_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(preprod_uk_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(preprod_uk_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(preprod_uk_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(preprod_uk_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)euwcmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(preprod_uk_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(preprod_uk_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(ukLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(ukLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(preprod_uk_retry_count)
+      - name: usePrL1Credentials
+        value: $(preprod_uk_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(preprod_uk_is_customhost_enabled)
+      - name: customDomain
+        value: $(preprod_uk_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(preprod_uk_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(preprod_uk_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(preprod_uk_update_type)
+      - name: updateVersion
+        value: $(preprod_uk_update_version)
+      - name: allowedInstallerVersions
+        value: $(preprod_uk_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(preprod_uk_proxy_url)
+      - name: testServiceUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(ukLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest-preprod
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_uk_region'],'true'), 
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_uk_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 600
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection) 
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_uk_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection) 
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['preprod_uk_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml          
+
+  - stage: PREPROD_TEST_AU      
+    dependsOn:
+      - BUILD
+    variables:
+      - name: targetEnvironment
+        value: ppd
+      - name: regionSc
+        value: au
+      - name: browser
+        value: $(browserName)
+      - name: locationShortcut
+        value: $(auLocationShortcut)
+      - name: subscriptionPrefix
+        value: $(preprod_subscription_prefix)
+      - name: testVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-vmfactory-rg
+      - name: proxyVmRg
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-vmfactory-rg
+      - name: apimName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-apimanageservice-apim
+      - name: adminWebAppName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)cmmanagementapp
+      - name: frontdoorName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-frontdoor-fd
+      - name:  rgName
+        value: $(preprod_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-resources-rg
+      - name: testVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)vmtestdevice
+      - name: testInstallerVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)vmhyperv01
+      - name: zeissTestUserId
+        value: $(preprod_au_zeisstest_userid)
+      - name: zeissTestPwd
+        value: $(preprod_au_zeisstest_pwd)
+      - name: zeissRegularUserId
+        value: $(preprod_au_zeissregular_userid)
+      - name: zeissRegularuserPwd
+        value: $(preprod_au_zeissregularuser_pwd)
+      - name: tenantId
+        value: $(preprod_sp_tenantid)
+      - name: spClientAppId
+        value: $(preprod_sp_clientid)
+      - name: spClientSecret
+        value: $(preprod_sp_secret)
+      - name: regularUserHypervDeviceId
+        value: $(preprod_au_hypervtest_deviceid)
+      - name: serviceUserHypervDeviceId
+        value: $(preprod_au_serviceuser_hypervtest_deviceid)
+      - name: proxyDeviceId
+        value: $(preprod_au_proxytest_deviceid)
+      - name: activationKeyHypervDeviceId
+        value: $(preprod_au_activationkeytest_hyperv_deviceid)
+      - name: blackDuckToken
+        value: $(preprod_au_blackduck_token)
+      - name: blackDuckAuthUrl
+        value: $(preprod_au_blackduck_auth_url)
+      - name: blackDuckPkgsUrl
+        value: $(preprod_au_blackduck_pkgs_url)
+      - name: isCreateTestCasesInAdo
+        value: $(preprod_au_is_createtestcases_in_ado)
+      - name: isPublishScreenshots
+        value: $(preprod_au_is_publish_screenshots)
+      - name: isDeviceProvisionTestsEnabled
+        value: $(preprod_au_is_run_deviceprovisiongtests)
+      - name: zeissCMProvUserId
+        value: $(preprod_au_zeisscmprovuser_userid)
+      - name: zeissCMProvUserPwd
+        value: $(preprod_au_zeisscmprovuser_pwd)
+      - name: zeissCMProvL1UserId
+        value: $(preprod_au_zeisscmprovl1user_userid)
+      - name: zeissCMProvL1UserPwd
+        value: $(preprod_au_zeisscmprovl1user_pwd)
+      - name: installerStorageAccountName
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)euwcmpkgsa
+      - name: installerEnvironment
+        value: $(targetEnvironment)
+      - name: installerVersion
+        value: $(preprod_au_installerversion)
+      - name: testInstallerAutomationVm
+        value: $(dev_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)vminstallerautomation
+      - name: isRunInstallerGuiAutomation
+        value: $(preprod_au_is_runinstallerguiautomation)
+      - name: subscriptionId
+        value: $(dev_subscriptionId)
+      - name: logsSaRg
+        value: $(dev_subscription_prefix)-conm-$(targetEnvironment)-$(auLocationShortcut)-sa-rg
+      - name: logsStorageAccount
+        value: $(dev_subscription_prefix)conmgen$(auLocationShortcut)inslogssa
+      - name: retryCount
+        value: $(preprod_au_retry_count)
+      - name: usePrL1Credentials
+        value: $(preprod_au_usePrL1Credentials)
+      - name: isCustomHostEnabled
+        value: $(preprod_au_is_customhost_enabled)
+      - name: customDomain
+        value: $(preprod_au_adminweb_customhost)
+      - name: isStreamingEnabled
+        value: $(preprod_au_is_streaming_enabled)
+      - name: aduUpdateStatus
+        value: $(preprod_au_is_aduUpdate_enabled)
+      - name: updateType
+        value: $(preprod_au_update_type)
+      - name: updateVersion
+        value: $(preprod_au_update_version)
+      - name: allowedInstallerVersions
+        value: $(preprod_au_allowedInstallerVersions)
+      - name: proxyServerUrl
+        value: $(preprod_au_proxy_url)
+      - name: testServiceUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)vmhyperv01
+      - name: testRegularUserVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)vmhyperv02
+      - name: testProxyVm
+        value: $(preprod_subscription_prefix)conm$(targetEnvironment)$(auLocationShortcut)proxyvm
+      - group: connectivitymodule-integrationtest-preprod
+    condition: |
+      and (
+         succeeded('BUILD'),
+         eq(variables['enable_au_region'],'true'), 
+         or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['Build.SourceBranch'],'refs/heads/release/current')
+            )
+      )
+    jobs:
+      - job: StartTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/start-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmodule
+        timeoutInMinutes: 120
+        dependsOn: StartTestVM
+        condition: succeeded('StartTestVM')
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleStorage
+        dependsOn: EdgeModulesManagementmodule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-storage-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesManagementmoduleLogging
+        dependsOn: EdgeModulesManagementmoduleStorage
+        condition: succeededOrFailed()
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/management-logging-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: EdgeModulesDicomforwarder
+        dependsOn: EdgeModulesManagementmoduleLogging
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/dicomforwarder-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsDeviceManagement
+        dependsOn: EdgeModulesDicomforwarder
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_au_is_run_deviceprovisiongtests'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/devicemanagement-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZVIEdgeModule
+        dependsOn: CloudComponentsDeviceManagement
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zvi-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: ZSSEdgeModule
+        dependsOn: ZVIEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/zss-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: STREdgeModule
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/EdgeModules/str-module-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: CloudComponentsEventProcessor
+        dependsOn: ZSSEdgeModule
+        condition: succeededOrFailed()
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: none
+          - template: Test/CloudComponents/eventprocessor-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: AdminPortal
+        dependsOn: CloudComponentsEventProcessor
+        condition: succeededOrFailed()
+        timeoutInMinutes: 600
+        pool:
+          vmImage: $(vmImageWindows)
+          demands: npm
+        steps:
+          - checkout: none
+          - template: Test/AdminPortal/adminportal-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection) 
+
+      - job: InstallerTests
+        dependsOn: AdminPortal
+        condition: |
+          and (
+            succeededOrFailed(),
+            eq(variables['preprod_au_is_runinstallerguiautomation'], 'true')
+          )
+        timeoutInMinutes: 120
+        pool:
+          vmImage: $(vmImageWindows)
+        steps:
+          - checkout: none
+          - template: Test/InstallerAutomation/installerautomation-test.yml
+            parameters:
+              service_conn: $(preprod_service_connection) 
+
+      - job: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        dependsOn: AdminPortal
+        condition: always()
+        steps:
+          - checkout: none
+          - template: Test/TestDevice/stop-vm.yml
+            parameters:
+              service_conn: $(preprod_service_connection)
+
+      - job: PublishTestCasesToADO
+        condition: |
+          and (
+            succeededOrFailed(),
+            or (
+                eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                eq(variables['preprod_au_is_createtestcases_in_ado'], 'true')
+            )
+          )
+        displayName: 'Publish Test Cases to ADO'
+        dependsOn: StopTestVM
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - template: Test/PublishToADO/publish-test-results-as-ado-test-cases.yml          
+                
